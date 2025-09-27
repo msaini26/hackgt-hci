@@ -1,13 +1,7 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBFC_Kue9Cy7LKXUjc-lWCEvQLYwFEz9JU",
   authDomain: "email-notifs-32e10.firebaseapp.com",
@@ -20,12 +14,29 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
+// Functions for Google Sign-In / Sign-Out
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    console.log("Signed in user:", user);
+    return user;
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    throw error;
+  }
+};
 
-// Initialize Firebase Cloud Messaging and get a reference to the service
-const messaging = getMessaging(app);
-// Add the public key generated from the console here.
-getToken(messaging, {vapidKey: "BPHP7E_3itzJqwM7A9mIxWSl6IPujCnpDBnE5-W55e_7_40xyJAPxYGZKcUJ8XKQnYgf8hu0mGE88ToX93kUEsU"});
+export const signOutUser = async () => {
+  try {
+    await signOut(auth);
+    console.log("User signed out");
+  } catch (error) {
+    console.error("Sign out error:", error);
+  }
+};
 
-export { app, messaging };
+export { auth };

@@ -1,20 +1,26 @@
 import * as React from "react";
+import { Button } from "baseui/button";
 import { Input } from "baseui/input";
-import { useStyletron } from "baseui";
-import {
-  DisplayLarge,
-  DisplayMedium,
-  DisplaySmall,
-  DisplayXSmall,
-} from "baseui/typography";
+import { signInWithGoogle, signOutUser } from "./firebase";
 
 const textString = "We ignite opportunity by setting the world in motion.";
-
 
 function App() {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [css, theme] = useStyletron();
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const user = await signInWithGoogle();
+      console.log("User info:", user.displayName, user.email);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOutUser();
+  };
 
   return (
     <div className="App" style={{ textAlign: "center", marginTop: "50px" }}>
@@ -51,11 +57,12 @@ function App() {
           },
         }}
       />
-
-      
+      <Button onClick={handleGoogleSignIn}>Sign in with Google</Button>
+      <Button onClick={handleSignOut} style={{ marginLeft: "10px" }}>
+        Sign Out
+      </Button>
     </div>
   );
 }
 
 export default App;
-
