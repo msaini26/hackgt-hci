@@ -1,122 +1,108 @@
-// Gmail API integration service
-// Note: This requires Gmail API setup and OAuth2 authentication
-
 class GmailService {
   constructor() {
-    this.apiKey = process.env.REACT_APP_GMAIL_API_KEY;
-    this.clientId = process.env.REACT_APP_GMAIL_CLIENT_ID;
+    this.clientId = process.env.REACT_APP_GMAIL_CLIENT_ID;   // keep your names
+    // this.apiKey = process.env.REACT_APP_GMAIL_API_KEY;     // not needed
     this.discoveryDoc = 'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest';
+
     this.gapi = null;
+    this.tokenClient = null;
     this.isInitialized = false;
   }
 
-  // Initialize Gmail API
   async init() {
     try {
-      // Load Gmail API
-      await this.loadGmailAPI();
-      
-      // Check if gapi is available
-      if (!this.gapi || !this.gapi.client) {
-        throw new Error('Gmail API not loaded properly');
-      }
-      
-      // Initialize the API client
-      await this.gapi.client.init({
-        apiKey: this.apiKey,
-        clientId: this.clientId,
-        discoveryDocs: [this.discoveryDoc],
-        scope: 'https://www.googleapis.com/auth/gmail.readonly'
-      });
-
-      console.log('Gmail API initialized');
+      await this.loadScripts(); // load both scripts
+      await this.initGapiClient(); // discovery only (no API key needed)
+      this.initTokenClient(); // GIS OAuth client
       this.isInitialized = true;
       return true;
-    } catch (error) {
-      console.error('Error initializing Gmail API:', error);
+    } catch (e) {
+      console.error('Init failed:', e);
       this.isInitialized = false;
       return false;
     }
   }
 
-  // Load Gmail API script
-  loadGmailAPI() {
-    return new Promise((resolve, reject) => {
-      // Check if gapi is already loaded
-      if (window.gapi && window.gapi.client) {
-        this.gapi = window.gapi;
-        resolve();
-        return;
-      }
+  loadScripts() {
+    const ensure = (src) =>
+      new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const s = document.createElement('script');
+        s.src = src; s.async = true; s.defer = true;
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
 
-      // Check if script is already being loaded
-      if (document.querySelector('script[src="https://apis.google.com/js/api.js"]')) {
-        // Wait for existing script to load
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        const checkGapi = () => {
-          if (window.gapi && window.gapi.client) {
-            this.gapi = window.gapi;
-            resolve();
-          } else if (attempts < maxAttempts) {
-            attempts++;
-            setTimeout(checkGapi, 100);
-          } else {
-            reject(new Error('Gmail API script loading timeout'));
-          }
-        };
-        checkGapi();
-        return;
-      }
+    return Promise.all([
+      ensure('https://accounts.google.com/gsi/client'),
+      new Promise((resolve, reject) => {
+        // gapi needs a special load step
+        if (window.gapi?.client) return resolve();
+        const s = document.createElement('script');
+        s.src = 'https://apis.google.com/js/api.js'; s.async = true; s.defer = true;
+        s.onload = () => window.gapi.load('client', resolve);
+        s.onerror = reject;
+        document.head.appendChild(s);
+      }).then(() => { this.gapi = window.gapi; })
+    ]);
+  }
 
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = 'anonymous';
-      
-      script.onload = () => {
-        try {
-          if (window.gapi) {
-            this.gapi = window.gapi;
-            this.gapi.load('client', () => {
-              if (this.gapi && this.gapi.client) {
-                resolve();
-              } else {
-                reject(new Error('Failed to load Gmail client'));
-              }
-            });
-          } else {
-            reject(new Error('Gmail API script loaded but gapi is undefined'));
-          }
-        } catch (error) {
-          reject(new Error(`Gmail API initialization error: ${error.message}`));
-        }
-      };
-      
-      script.onerror = (error) => {
-        reject(new Error('Failed to load Gmail API script - check internet connection'));
-      };
-      
-      // Add error handling for script loading
-      script.onabort = () => {
-        reject(new Error('Gmail API script loading was aborted'));
-      };
-      
-      document.head.appendChild(script);
+  async initGapiClient() {
+    // Only discovery docs; do NOT pass apiKey/clientId here
+    await this.gapi.client.init({
+      discoveryDocs: [this.discoveryDoc],
     });
   }
 
-  // Authenticate user
-  async authenticate() {
-    try {
-      const authInstance = this.gapi.auth2.getAuthInstance();
-      const user = await authInstance.signIn();
-      return user;
-    } catch (error) {
-      console.error('Authentication failed:', error);
-      throw error;
+  initTokenClient() {
+    if (!window.google?.accounts?.oauth2) {
+      throw new Error('Google Identity Services not available');
     }
+    this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: this.clientId,
+      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      callback: () => {}, // set per-request
+    });
+  }
+
+  async authenticate({ prompt = 'consent' } = {}) {
+    // Request/refresh an access token using GIS
+    return new Promise((resolve, reject) => {
+      if (!this.tokenClient) return reject(new Error('Token client not ready'));
+      this.tokenClient.callback = (resp) => {
+        if (resp.error) return reject(resp);
+        resolve(resp);
+      };
+      this.tokenClient.requestAccessToken({ prompt });
+    });
+  }
+
+  isAuthenticated() {
+    // With GIS, token lives in gapi.client
+    const token = this.gapi?.client?.getToken?.();
+    return !!(token && token.access_token);
+  }
+
+  async signOut() {
+    const token = this.gapi?.client?.getToken?.();
+    if (token?.access_token) {
+      // Revoke and clear token
+      await new Promise((res) =>
+        window.google.accounts.oauth2.revoke(token.access_token, res)
+      );
+      this.gapi.client.setToken(null);
+    }
+  }
+
+  // Check if service is properly configured
+  isConfigured() {
+    return !!(this.clientId);
+  }
+
+  // Check if user is authenticated
+  isAuthenticated() {
+    const token = this.gapi?.client?.getToken?.();
+    return !!(token && token.access_token);
   }
 
   // Get user's emails
@@ -228,64 +214,6 @@ class GmailService {
     const temp = document.createElement('div');
     temp.innerHTML = html;
     return temp.textContent || temp.innerText || '';
-  }
-
-  // Search emails with specific query
-  async searchEmails(query, maxResults = 10) {
-    try {
-      const response = await this.gapi.client.gmail.users.messages.list({
-        userId: 'me',
-        maxResults: maxResults,
-        q: query
-      });
-
-      const messages = response.result.messages || [];
-      const emails = [];
-
-      for (const message of messages) {
-        try {
-          const email = await this.getEmailDetails(message.id);
-          if (email) {
-            emails.push(email);
-          }
-        } catch (error) {
-          console.error(`Error fetching email ${message.id}:`, error);
-        }
-      }
-
-      return emails;
-    } catch (error) {
-      console.error('Error searching emails:', error);
-      throw error;
-    }
-  }
-
-  // Check if service is properly configured
-  isConfigured() {
-    return !!(this.apiKey && this.clientId);
-  }
-
-  // Check if user is authenticated
-  isAuthenticated() {
-    try {
-      if (!this.isInitialized || !this.gapi) {
-        return false;
-      }
-      const authInstance = this.gapi.auth2.getAuthInstance();
-      return authInstance.isSignedIn.get();
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // Sign out
-  async signOut() {
-    try {
-      const authInstance = this.gapi.auth2.getAuthInstance();
-      await authInstance.signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
   }
 }
 

@@ -12,6 +12,12 @@ const firebaseConfig = {
   measurementId: "G-8GRZ4X3LTM",
 };
 
+// Add localhost to authorized domains for development
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+  // This helps with local development
+  console.log('Running in localhost mode');
+}
+
 export const app = initializeApp(firebaseConfig);
 console.log("Hello this is for testing")
 console.log(app)

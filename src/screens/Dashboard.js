@@ -3,6 +3,7 @@ import { EmailParser, mockEmails } from '../lib/emailParser';
 import { notificationService, sendNotificationsForParsedEmails } from '../lib/notificationService';
 import { gmailService, fetchAndParseEmails } from '../lib/gmailService';
 import { testGmailConnection, testScriptLoading } from '../lib/gmailTest';
+import { geminiService, parseEmailsWithGemini } from '../lib/geminiService';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
@@ -16,6 +17,9 @@ export default function Dashboard() {
   const [gmailConnected, setGmailConnected] = useState(false);
   const [useGmail, setUseGmail] = useState(false);
   const [gmailConfigured, setGmailConfigured] = useState(false);
+  const [useGemini, setUseGemini] = useState(true);
+  const [geminiConfigured, setGeminiConfigured] = useState(false);
+  const [insights, setInsights] = useState(null);
 
   const emailParser = new EmailParser();
 
@@ -29,7 +33,20 @@ export default function Dashboard() {
     setNotificationsEnabled(notificationService.isNotificationSupported());
 
     // Check Gmail configuration
-    setGmailConfigured(gmailService.isConfigured());
+    try {
+      setGmailConfigured(gmailService?.isConfigured?.() || false);
+    } catch (error) {
+      console.error('Error checking Gmail configuration:', error);
+      setGmailConfigured(false);
+    }
+    
+    // Check Gemini configuration
+    try {
+      setGeminiConfigured(geminiService?.isGeminiConfigured?.() || false);
+    } catch (error) {
+      console.error('Error checking Gemini configuration:', error);
+      setGeminiConfigured(false);
+    }
 
     return () => unsubscribe();
   }, []);
@@ -39,21 +56,42 @@ export default function Dashboard() {
     setLoading(true);
     try {
       let fetchedEmails;
+      let result;
       
       if (useGmail && gmailConnected) {
         // Use Gmail API
-        const result = await fetchAndParseEmails(emailParser, 10);
-        fetchedEmails = result.emails;
-        setParsedEmails(result.parsedEmails);
-        setTimeRelatedEmails(result.timeRelatedEmails);
+        const gmailResult = await fetchAndParseEmails(emailParser, 10);
+        fetchedEmails = gmailResult.emails;
+        
+        if (useGemini && geminiConfigured) {
+          // Use Gemini AI for parsing
+          result = await parseEmailsWithGemini(fetchedEmails);
+          setParsedEmails(result.parsedEmails);
+          setTimeRelatedEmails(result.timeRelatedEmails);
+          setInsights(result.insights);
+        } else {
+          // Use local parser
+          setParsedEmails(gmailResult.parsedEmails);
+          setTimeRelatedEmails(gmailResult.timeRelatedEmails);
+        }
       } else {
         // Use mock data
         fetchedEmails = mockEmails;
-        const parsed = emailParser.parseEmails(fetchedEmails);
-        setParsedEmails(parsed);
         
-        const timeRelated = parsed.filter(email => email.hasTimeInfo);
-        setTimeRelatedEmails(timeRelated);
+        if (useGemini && geminiConfigured) {
+          // Use Gemini AI for parsing
+          result = await parseEmailsWithGemini(fetchedEmails);
+          setParsedEmails(result.parsedEmails);
+          setTimeRelatedEmails(result.timeRelatedEmails);
+          setInsights(result.insights);
+        } else {
+          // Use local parser
+          const parsed = emailParser.parseEmails(fetchedEmails);
+          setParsedEmails(parsed);
+          
+          const timeRelated = parsed.filter(email => email.hasTimeInfo);
+          setTimeRelatedEmails(timeRelated);
+        }
       }
       
       setEmails(fetchedEmails);
@@ -80,7 +118,12 @@ export default function Dashboard() {
 
   // Refresh Gmail configuration check
   const refreshGmailConfig = () => {
-    setGmailConfigured(gmailService.isConfigured());
+    try {
+      setGmailConfigured(gmailService?.isConfigured?.() || false);
+    } catch (error) {
+      console.error('Error refreshing Gmail configuration:', error);
+      setGmailConfigured(false);
+    }
   };
 
   // Test Gmail connection
@@ -159,6 +202,15 @@ export default function Dashboard() {
       if (gmailConnected) {
         await gmailService.signOut();
       }
+      
+      // Check if using development bypass
+      const devUser = localStorage.getItem('dev-auth-user');
+      if (devUser) {
+        localStorage.removeItem('dev-auth-user');
+        window.location.reload();
+        return;
+      }
+      
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -217,6 +269,125 @@ export default function Dashboard() {
             Logout
           </button>
         </div>
+      </div>
+
+      {/* AI Parser Settings */}
+      <div style={{ 
+        marginBottom: '30px',
+        padding: '20px',
+        backgroundColor: '#e8f5e8',
+        borderRadius: '8px',
+        border: '1px solid #c3e6c3'
+      }}>
+        <h3>🤖 AI Email Parser</h3>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '15px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input 
+              type="radio" 
+              name="parserType" 
+              checked={useGemini}
+              onChange={() => setUseGemini(true)}
+            />
+            Google Gemini AI (Recommended)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input 
+              type="radio" 
+              name="parserType" 
+              checked={!useGemini}
+              onChange={() => setUseGemini(false)}
+            />
+            Local Algorithm
+          </label>
+        </div>
+        
+        {useGemini && (
+          <div>
+            <p>Gemini Status: {geminiConfigured ? '✅ Configured' : '❌ Not Configured'}</p>
+            {!geminiConfigured ? (
+              <div style={{ 
+                padding: '15px', 
+                backgroundColor: '#fff3cd', 
+                border: '1px solid #ffeaa7',
+                borderRadius: '4px',
+                marginTop: '10px'
+              }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#856404' }}>🧠 Gemini AI Setup Required</h4>
+                <p style={{ margin: '0 0 10px 0', color: '#856404' }}>
+                  To use Google Gemini AI for intelligent email parsing, you need to set up your API key.
+                </p>
+                <div style={{ fontSize: '14px', color: '#666' }}>
+                  <p style={{ margin: '5px 0' }}>1. Go to <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></p>
+                  <p style={{ margin: '5px 0' }}>2. Create a new API key</p>
+                  <p style={{ margin: '5px 0' }}>3. Add REACT_APP_GEMINI_API_KEY to your .env file</p>
+                  <p style={{ margin: '5px 0' }}>4. Restart the development server</p>
+                </div>
+                <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button 
+                    onClick={() => {
+                      const envContent = `# Gemini AI Configuration
+REACT_APP_GEMINI_API_KEY=your_gemini_api_key_here`;
+                      const blob = new Blob([envContent], { type: 'text/plain' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = '.env';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#2196f3',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    📥 Download .env Template
+                  </button>
+                  <button 
+                    onClick={() => {
+                      try {
+                        setGeminiConfigured(geminiService?.isGeminiConfigured?.() || false);
+                      } catch (error) {
+                        console.error('Error refreshing Gemini configuration:', error);
+                        setGeminiConfigured(false);
+                      }
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#4caf50',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    🔄 Refresh Config
+                  </button>
+                  <span style={{ fontSize: '12px', color: '#666' }}>
+                    or use <strong>Local Algorithm</strong>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ 
+                padding: '10px', 
+                backgroundColor: '#d4edda', 
+                border: '1px solid #c3e6cb',
+                borderRadius: '4px',
+                marginTop: '10px'
+              }}>
+                <p style={{ margin: '0', color: '#155724', fontSize: '14px' }}>
+                  ✅ <strong>Gemini AI is ready!</strong> Your emails will be analyzed with advanced AI for better time detection and insights.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Email Source Settings */}
@@ -416,6 +587,56 @@ REACT_APP_GMAIL_CLIENT_ID=your_gmail_client_id_here`;
         </button>
       </div>
 
+      {/* AI Insights */}
+      {insights && useGemini && (
+        <div style={{ 
+          marginBottom: '30px',
+          padding: '20px',
+          backgroundColor: '#e8f5e8',
+          borderRadius: '8px',
+          border: '1px solid #c3e6c3'
+        }}>
+          <h2>🧠 AI Insights</h2>
+          <div style={{ marginBottom: '15px' }}>
+            <h4>📊 Analysis</h4>
+            <p style={{ margin: '0', color: '#333', fontSize: '16px' }}>{insights.insights}</p>
+          </div>
+          
+          {insights.recommendations && insights.recommendations.length > 0 && (
+            <div style={{ marginBottom: '15px' }}>
+              <h4>💡 Recommendations</h4>
+              <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                {insights.recommendations.map((rec, index) => (
+                  <li key={index} style={{ marginBottom: '5px', color: '#333' }}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {insights.upcomingDeadlines && insights.upcomingDeadlines.length > 0 && (
+            <div style={{ marginBottom: '15px' }}>
+              <h4>⏰ Upcoming Deadlines</h4>
+              <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                {insights.upcomingDeadlines.map((deadline, index) => (
+                  <li key={index} style={{ marginBottom: '5px', color: '#d63384', fontWeight: 'bold' }}>{deadline}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {insights.priorityActions && insights.priorityActions.length > 0 && (
+            <div>
+              <h4>🚨 Priority Actions</h4>
+              <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                {insights.priorityActions.map((action, index) => (
+                  <li key={index} style={{ marginBottom: '5px', color: '#dc3545', fontWeight: 'bold' }}>{action}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Statistics */}
       {parsedEmails.length > 0 && (
         <div style={{ 
@@ -448,7 +669,7 @@ REACT_APP_GMAIL_CLIENT_ID=your_gmail_client_id_here`;
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <h3>{timeRelatedEmails.filter(email => email.summary.priority === 'high').length}</h3>
+            <h3>{timeRelatedEmails.filter(email => email.summary?.priority === 'high').length}</h3>
             <p>High Priority</p>
           </div>
         </div>

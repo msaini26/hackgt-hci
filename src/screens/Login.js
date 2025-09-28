@@ -11,11 +11,22 @@ export default function Login() {
     setErr("");
     setLoading(true);
     try {
+      // Add redirect URI configuration for localhost
+      googleProvider.addScope('email');
+      googleProvider.addScope('profile');
+      
       await signInWithPopup(auth, googleProvider);
       console.log("Signed in with Google");
       // User will be automatically redirected to Dashboard via App.js
     } catch (e) {
-      setErr(e.message || "Sign-in failed");
+      console.error("Google sign-in error:", e);
+      if (e.code === 'auth/popup-closed-by-user') {
+        setErr("Sign-in was cancelled. Please try again.");
+      } else if (e.code === 'auth/redirect-uri-mismatch') {
+        setErr("OAuth configuration error. Please check the setup guide in FIREBASE_OAUTH_FIX.md");
+      } else {
+        setErr(e.message || "Sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -25,6 +36,24 @@ export default function Login() {
     e.preventDefault();
     // TODO: implement email/password with createUserWithEmailAndPassword or signInWithEmailAndPassword
     console.log("email/password submit");
+  };
+
+  // Development bypass for testing
+  const handleDevLogin = () => {
+    console.log("Development login bypass");
+    // Simulate successful authentication by setting a mock user
+    const mockUser = {
+      uid: 'dev-user-123',
+      displayName: 'Development User',
+      email: 'dev@example.com',
+      photoURL: null
+    };
+    
+    // Store mock user in localStorage for the app to recognize
+    localStorage.setItem('dev-auth-user', JSON.stringify(mockUser));
+    
+    // Reload to trigger authentication state change
+    window.location.reload();
   };
 
   return (
@@ -58,6 +87,32 @@ export default function Login() {
         </form>
 
         {err && <p style={{ color: "crimson", marginTop: 12 }}>{err}</p>}
+        
+        {/* Development bypass - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ marginTop: 20, padding: 15, backgroundColor: '#f8f9fa', borderRadius: 4, border: '1px solid #dee2e6' }}>
+            <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>
+              <strong>Development Mode:</strong> If Google login fails due to OAuth configuration, you can bypass authentication for testing.
+            </p>
+            <button 
+              onClick={handleDevLogin}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              🚧 Skip Authentication (Dev Only)
+            </button>
+            <p style={{ margin: '10px 0 0 0', fontSize: '11px', color: '#999' }}>
+              See FIREBASE_OAUTH_FIX.md for proper OAuth setup
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

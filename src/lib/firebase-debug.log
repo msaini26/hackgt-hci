@@ -1,0 +1,51 @@
+[debug] [2025-09-28T00:09:04.599Z] ----------------------------------------------------------------------
+[debug] [2025-09-28T00:09:04.600Z] Command:       /usr/local/bin/node /Users/KRX/Downloads/HackGT/hackgt-hci/emoji-rage/node_modules/.bin/firebase login
+[debug] [2025-09-28T00:09:04.600Z] CLI Version:   14.17.0
+[debug] [2025-09-28T00:09:04.600Z] Platform:      darwin
+[debug] [2025-09-28T00:09:04.600Z] Node Version:  v20.11.0
+[debug] [2025-09-28T00:09:04.600Z] Time:          Sat Sep 27 2025 20:09:04 GMT-0400 (Eastern Daylight Time)
+[debug] [2025-09-28T00:09:04.600Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-09-28T00:09:04.601Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] i  The Firebase CLI’s MCP server feature can optionally make use of Gemini in Firebase. Learn more about Gemini in Firebase and how it uses your data: https://firebase.google.com/docs/gemini-in-firebase#how-gemini-in-firebase-uses-your-data 
+[debug] [2025-09-28T00:09:04.823Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-09-28T00:09:04.823Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[info] 
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you. 
+[info] 
+[info] i  To change your preferences at any time, run `firebase logout` and `firebase login` again. 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=232960995&redirect_uri=http%3A%2F%2Flocalhost%3A9005
+[info] 
+[info] Waiting for authentication...
+[debug] [2025-09-28T00:10:30.446Z] >>> [apiv2][query] POST https://auth.firebase.tools/attest [none]
+[debug] [2025-09-28T00:10:30.447Z] >>> [apiv2][body] POST https://auth.firebase.tools/attest {"session_id":"5f943f9a-5d0d-4476-8c0e-6850fe5bad76"}
+[debug] [2025-09-28T00:10:30.802Z] <<< [apiv2][status] POST https://auth.firebase.tools/attest 200
+[debug] [2025-09-28T00:10:30.803Z] <<< [apiv2][body] POST https://auth.firebase.tools/attest {"token":"iT4_H9qjUsb-8g8Ea-sRuRkJ9vfIB1LZu_M6HxSte8Q"}
+[info] 
+[info] To sign in to the Firebase CLI:
+[info] 
+[info] 1. Take note of your session ID:
+[info] 
+[info]    5F943
+[info] 
+[info] 2. Visit the URL below on any device and follow the instructions to get your code:
+[info] 
+[info]    https://auth.firebase.tools/login?code_challenge=ZXRINrchrv_0jHi7PmjTbJ8L4CwqD2BzxyVO1FDqBOk&session=5f943f9a-5d0d-4476-8c0e-6850fe5bad76&attest=iT4_H9qjUsb-8g8Ea-sRuRkJ9vfIB1LZu_M6HxSte8Q
+[info] 
+[info] 3. Paste or enter the authorization code below once you have it:
+[info] 
+[debug] [2025-09-28T04:43:45.846Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (/Users/KRX/Downloads/HackGT/hackgt-hci/emoji-rage/node_modules/@inquirer/core/dist/commonjs/lib/create-prompt.js:101:37)
+    at Interface.emit (node:events:518:28)
+    at Interface.emit (node:domain:488:12)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1125:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:264:20)
+    at ReadStream.emit (node:events:530:35)
+    at ReadStream.emit (node:domain:488:12)
+    at emitKeys (node:internal/readline/utils:371:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+[error] 
+[error] Error: An unexpected error has occurred.

@@ -15,6 +15,19 @@ export default function App() {
       setLoading(false);
     });
 
+    // Check for development bypass
+    const devUser = localStorage.getItem('dev-auth-user');
+    if (devUser && process.env.NODE_ENV === 'development') {
+      try {
+        const mockUser = JSON.parse(devUser);
+        setUser(mockUser);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error parsing dev user:', error);
+        localStorage.removeItem('dev-auth-user');
+      }
+    }
+
     return () => unsubscribe();
   }, []);
 
