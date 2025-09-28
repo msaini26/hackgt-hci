@@ -5,6 +5,9 @@ import { gmailService, fetchAndParseEmails } from '../lib/gmailService';
 import { testGmailConnection, testScriptLoading } from '../lib/gmailTest';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
+import { Button } from 'baseui/button';
+import SnowflakeChat from '../components/SnowflakeChat';
+
 
 export default function Dashboard() {
   const [emails, setEmails] = useState([]);
@@ -203,11 +206,11 @@ export default function Dashboard() {
           <p>Welcome, {user?.displayName || user?.email || 'User'}!</p>
         </div>
         <div>
-          <button 
+          <Button 
             onClick={handleLogout}
             style={{
               padding: '10px 20px',
-              backgroundColor: '#ff4444',
+              backgroundColor: '#6c63ff',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -215,7 +218,7 @@ export default function Dashboard() {
             }}
           >
             Logout
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -372,9 +375,9 @@ REACT_APP_GMAIL_CLIENT_ID=your_gmail_client_id_here`;
       <div style={{ 
         marginBottom: '30px',
         padding: '20px',
-        backgroundColor: '#e8f4fd',
+        backgroundColor: '#eae9f8ff',
         borderRadius: '8px',
-        border: '1px solid #bee5eb'
+        border: '1px solid #bdbbd8ff'
       }}>
         <h3>🔔 Notification Settings</h3>
         <p>Status: {notificationsEnabled ? '✅ Enabled' : '❌ Disabled'}</p>
@@ -579,6 +582,14 @@ REACT_APP_GMAIL_CLIENT_ID=your_gmail_client_id_here`;
           <p>Click "Parse Emails" to analyze your emails for time-related information.</p>
         </div>
       )}
+      {/* 🔮 Snowflake Chatbot */}
+      <div style={{ marginTop: '50px' }}>
+        <SnowflakeChat 
+          token="eyJraWQiOiI4ODIxNTc1Njg1IiwiYWxnIjoiRVMyNTYifQ.eyJwIjoiMzQ0NTkxNDA6MzQ0NTkxNDAiLCJpc3MiOiJTRjozMDA0IiwiZXhwIjoxNzYwMzQxODkwfQ.e9avEs6pHhmUiuY2vOS8efYKYO8tnXLhMLxLWFc1VQnAoSvudfu7vcsP1JemF_aYNf8fGxQo9dEAG0I_STqYnA" 
+          accountId="RALPEGP-UB29280" 
+        />
+      </div>
+
     </div>
   );
 }
