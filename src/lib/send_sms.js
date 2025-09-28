@@ -21,7 +21,7 @@ const client = twilio(accountSid, authToken);
 
 async function createMessage() {
   const message = await client.messages.create({
-    body: "This is the ship that made the Kessel Run in fourteen parsecs?",
+    body: "Subject: Assignment Due Tomorrow\n\nYour math homework is due tomorrow at 11:59 pm. Please submit it through the online portal.",
     from: "+18557340767",
     to: "+18777804236",
   });

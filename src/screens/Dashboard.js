@@ -6,6 +6,8 @@ import { testGmailConnection, testScriptLoading } from '../lib/gmailTest';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { Button } from 'baseui/button';
+import SnowflakeChat from '../components/SnowflakeChat';
+
 
 export default function Dashboard() {
   const [emails, setEmails] = useState([]);
@@ -580,6 +582,14 @@ REACT_APP_GMAIL_CLIENT_ID=your_gmail_client_id_here`;
           <p>Click "Parse Emails" to analyze your emails for time-related information.</p>
         </div>
       )}
+      {/* 🔮 Snowflake Chatbot */}
+      <div style={{ marginTop: '50px' }}>
+        <SnowflakeChat 
+          token="eyJraWQiOiI4ODIxNTc1Njg1IiwiYWxnIjoiRVMyNTYifQ.eyJwIjoiMzQ0NTkxNDA6MzQ0NTkxNDAiLCJpc3MiOiJTRjozMDA0IiwiZXhwIjoxNzYwMzQxODkwfQ.e9avEs6pHhmUiuY2vOS8efYKYO8tnXLhMLxLWFc1VQnAoSvudfu7vcsP1JemF_aYNf8fGxQo9dEAG0I_STqYnA" 
+          accountId="RALPEGP-UB29280" 
+        />
+      </div>
+
     </div>
   );
 }
