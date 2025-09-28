@@ -77,7 +77,7 @@ const secondarySvgBackground = encodeURIComponent(`<svg viewBox="0 0 200 200" xm
         alignItems: "center",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "200px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "280px" }}>
       <img
         src={Logo}
         alt="Logo"
@@ -89,7 +89,7 @@ const secondarySvgBackground = encodeURIComponent(`<svg viewBox="0 0 200 200" xm
           width: "250px",
           height: "auto",
           zIndex: 2,
-          paddingBottom: "24px", // higher than login UI
+          paddingBottom: "20px", // higher than login UI
         }}
       />
       <div
