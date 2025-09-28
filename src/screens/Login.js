@@ -66,7 +66,6 @@ const secondarySvgBackground = encodeURIComponent(`<svg viewBox="0 0 200 200" xm
     backgroundRepeat: "no-repeat",
     backgroundPosition: "bottom left", // ensures image starts at bottom-left
     backgroundSize: "1000px 1000px",   // adjust size as needed
-    pointerEvents: "none",              // clicks pass through
     zIndex: 0,                          // behind your content
   }}
 >
