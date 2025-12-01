@@ -68,8 +68,8 @@ class NotificationService {
     if (Notification.permission === 'granted') {
       const notificationInstance = new Notification(notification.title, {
         body: notification.body,
-        icon: '/logo192.png',
-        badge: '/logo192.png',
+        icon: '/GT.png',
+        badge: '/GT.png',
         tag: 'email-notification',
         requireInteraction: true
       });
@@ -92,8 +92,8 @@ class NotificationService {
     const notification = {
       title: `⏰ ${summary.type} Alert`,
       body: `${summary.subject} from ${summary.from}`,
-      icon: '/logo192.png',
-      badge: '/logo192.png',
+      icon: '/GT.png',
+      badge: '/GT.png',
       tag: `time-alert-${summary.type.toLowerCase()}`,
       data: {
         type: summary.type,
